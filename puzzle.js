@@ -1,45 +1,47 @@
 function buildGraph(fragments) {
-  const graph = {};
+  const graph = new Map();
+
   fragments.forEach((fragment) => {
     const start = fragment.slice(0, 2);
     const end = fragment.slice(-2);
-    if (!graph[start]) graph[start] = [];
-    if (!graph[end]) graph[end] = [];
-    graph[start].push(fragment);
-    graph[end].push(fragment);
+
+    if (!graph.has(start)) graph.set(start, []);
+    graph.get(start).push(fragment);
   });
+
   return graph;
 }
 
-function findLongestPath(graph, fragments) {
-  function dfs(node, visited, path) {
-    visited.add(node);
-    path.push(node);
-    let maxPath = Array.from(path);
-    (graph[node] || []).forEach((neighbor) => {
-      if (!visited.has(neighbor)) {
-        const newPath = dfs(neighbor, visited, path);
-        if (newPath.length > maxPath.length) {
-          maxPath = newPath;
-        }
+function findLongestSequence(graph, fragments) {
+  let longestSequence = "";
+
+  function dfs(currentSequence, lastDigits, usedFragments) {
+    if (currentSequence.length > longestSequence.length) {
+      longestSequence = currentSequence;
+    }
+
+    if (!graph.has(lastDigits)) return;
+
+    graph.get(lastDigits).forEach((fragment) => {
+      if (!usedFragments.has(fragment)) {
+        usedFragments.add(fragment);
+        dfs(
+          currentSequence + fragment.slice(2),
+          fragment.slice(-2),
+          usedFragments
+        );
+        usedFragments.delete(fragment);
       }
     });
-    path.pop();
-    visited.delete(node);
-    return maxPath;
   }
 
-  let longestPath = [];
   fragments.forEach((fragment) => {
-    const startNode = fragment.slice(0, 2);
-    const visited = new Set();
-    const path = [];
-    const currentPath = dfs(startNode, visited, path);
-    if (currentPath.length > longestPath.length) {
-      longestPath = currentPath;
-    }
+    const usedFragments = new Set();
+    usedFragments.add(fragment);
+    dfs(fragment, fragment.slice(-2), usedFragments);
   });
-  return longestPath;
+
+  return longestSequence;
 }
 
 const fragments = [
@@ -188,6 +190,6 @@ const fragments = [
 ];
 
 const graph = buildGraph(fragments);
-const longestPath = findLongestPath(graph, fragments);
-const result = longestPath.join("");
-console.log(`Найдовша послідовність: ${result}`);
+const longestSequence = findLongestSequence(graph, fragments);
+console.log(`Найдовша послідовність: ${longestSequence}`);
+console.log(`Довжина максимальної послідовності: ${longestSequence.length}`);
